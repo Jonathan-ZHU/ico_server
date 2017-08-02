@@ -1,0 +1,28 @@
+{
+  "name": "ico_server",
+  "version": "0.0.1",
+  "description": "change bitcoin transactions to other altcoin for ICO",
+  "main": "app.js",
+  "dependencies": {
+    "bitcoind-rpc": "^0.6.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "bitcoin",
+    "altcoin",
+    "ico"
+  ],
+  "author": "Jonathan (tiny calf)",
+  "license": "ISC",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jonathan-ZHU/ico_server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Jonathan-ZHU/ico_server/issues"
+  },
+  "homepage": "https://github.com/Jonathan-ZHU/ico_server#readme"
+}

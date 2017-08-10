@@ -28,47 +28,71 @@ var trpc = new RPC({
 //3.返回比特币的付款地址
 app.get('/getBitcoinAddress',function(req,res){
 	console.log("received Tcash address" + req.query.addr);
-	//TODO:验证Tcash地址是否合法
-	console.log("distributing Bitcoin address for "+ req.query.addr +" ...");
-        //生成比特币付款地址
-	mrpc.getAccountAddress('',function (err ,ret){
-		if (err) {
-			console.log(err);
-			return;
-		} else {
-			var btcAddr= ret.result;
-			console.log("got Bitcoin address: " + btcAddr);
-			//保存到mongodb数据库
-			var insertData = function(db,callback) {
-			        var collection = db.collection('addrs');
-			        var data = [{
-                        		'TcashAddr':req.query.addr,
-                        		'BitcoinAddr':btcAddr
-                		}];
-        			collection.insert(data,function(err, result){
-                			if(err){
-                        			console.log("ERR:"+err);
-                        			return;
-                			}
-                			callback(result);
-        			});
+	//验证Tcash地址是否合法
+	trpc.getReceivedByAddress(req.query.addr,0,function (err, ret) {
+        	if(err){
+			var data = {
+				err:-5,
+				msg:"Invaild Tcash address"	
 			};
-			mongo.connect(DB_CONN_STR, function(err,db){
-			      insertData(db, function(result) {
-			      		console.log(result);
-		              		db.close();
-		              });
-			      console.log("succeeded adding a pair of addresses to db!");
-			      console.log('sending back bitcoin address');
-   			      var data = {
-			                err:0,
-					msg:{btcAddr:btcAddr},	
-			      };
-			      res.send(data);
+			console.log("got a invaild Tcash address");
+			res.send(data);
+			return;
+		}else{
+			console.log("distributing Bitcoin address for "+ req.query.addr +" ...");
+        		//生成比特币付款地址
+			mrpc.getNewAddress(function (err ,ret){
+				if (err) {
+					var data = {
+						err:-4,
+						msg:err.message,
+					};
+					console.log(err);
+					res.send(data);
+					return;
+				} else {
+					var btcAddr= ret.result;
+					console.log("got Bitcoin address: " + btcAddr);
+					//保存到mongodb数据库
+					var insertData = function(db,callback) {
+			        		var collection = db.collection('addrs');
+			        		var data = [{
+                        				'TcashAddr':req.query.addr,
+                        				'BitcoinAddr':btcAddr
+                				}];
+        					collection.insert(data,function(err, result){
+                					if(err){
+                        					console.log("ERR:"+err);
+                        					return;
+                					}
+                					callback(result);
+        					});
+					};
+					mongo.connect(DB_CONN_STR, function(err,db){
+			      			if(err){
+							var data = {
+								err:-3,
+								msg:err
+							};
+							res.send(data);
+							console.log("DB ERROR!")
+							return;
+						}
+						insertData(db, function(result) {
+		              				db.close();
+		              			});
+			      			console.log("succeeded adding a pair of addresses to db!");
+			      			console.log('sending back bitcoin address');
+   			      			var data = {
+			                		err:0,
+							msg:{btcAddr:btcAddr},	
+			      			};
+			      			res.send(data);
+					});
+				}
 			});
 		}
-	});
-	
+	});		
 });
 
 //获取新地址
@@ -79,10 +103,10 @@ app.get('/getBitcoinAddress',function(req,res){
 //});
 
 //获取某地址的金币数量
-//trpc.getReceivedByAddress("Jf5HyhCX3XFVshHAX7rGrtqCaHYuntchHb",function (err, ret) {
-        //console.log(err);
-        //console.log(ret);
-        //return;
+//trpc.getReceivedByAddress("1DaUYPyHJzxeK44FbwR9jPJQ5mZSF3znvz",function (err, ret) {
+//        console.log(err);
+//        console.log(ret);
+//        return;
 //});
 
 //http.createServer(function (req , res){
@@ -90,6 +114,12 @@ app.get('/getBitcoinAddress',function(req,res){
 //	res.end('Hello World!\n');
 //}).listen(8080);
 //console.log("Server is listening on 8080");
+
+//trpc.getReceivedByAddress("1DaUYPyHJzxeK44FbwR9jPJQ5mZSF3znvz",0,function (err, ret) {
+//	console.log(err);
+//	console.log(ret);	
+//
+//});
 
 app.listen(8080);
 console.log("Listening on port 8080");

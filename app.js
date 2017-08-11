@@ -26,7 +26,6 @@ var trpc = new RPC({
 	pass:'local321',
 });
 
-
 //获取比特币帐号新地址
 var getBTCNewAddress = function(callback){
 	mrpc.getNewAddress(function (err ,ret){
@@ -41,8 +40,6 @@ var getBTCNewAddress = function(callback){
 		}
 	});
 }
-
-getBTCNewAddress(function(){});
 
 //验证Tcash地址是否合法
 var judgeTcashAddress = function(TcashAddr,callback) {
@@ -59,19 +56,25 @@ var judgeTcashAddress = function(TcashAddr,callback) {
 
 //获取比特币某地址的金币数量
 var getBitcoinAddressRecieved = function (BitcoinAddr,callback) {
-	var address = {"addresses": [BitcoinAddr]};
-	mrpc.getAddressBalance(address,function (err, ret) {
+	mrpc.getReceivedByAddress(BitcoinAddr,function (err, ret) {
 		if(err) {
 			console.log(err);
 			callback(err,err);
 			return;
 		}
-		var balance = ret.result.balance/10000000;
+		var balance = ret.result;
 		console.log(BitcoinAddr+ " contains balance: " +  balance);
 	      	callback(null,balance);
 	      	 return;
 	});
 };
+
+ //getBitcoinAddressRecieved("JN7iG2hEGJ4pWaspTCdaPhBiorU1UcHzve",function(){});
+//  var address = {"addresses": ["JaHMApYcjGbnqVU9NMaD3cGvGq4R9c4aK7"]};
+// mrpc.getReceivedByAddress("JN7iG2hEGJ4pWaspTCdaPhBiorU1UcHzve",function (err, ret) {
+// 	console.log(ret);
+//       	 return;
+// });
 
 //向Tcash地址发送TCC
 // { result: '3c6fe33169dd7d9f6babcb2f030a00ff32328f3451fa626c749e5e56572c8cd4',
@@ -95,7 +98,7 @@ var sendToTcashAddr = function (TcashAddr,Num,callback) {
 
 //sendToTcashAddr("1DaUYPyHJzxeK44FbwR9jPJQ5mvvZSF3znvz",111111,function(){});
 
-// getBitcoinAddressRecieved("1DaUYPyHJzxeK44FbwR9jPJQ5mZSF3znvz",function(){});
+
 
 // trpc.getReceivedByAddress("1DaUYPyHJzxeK44FbwR9jPJQ5mZSF3znvz",function (err, ret) {
 // 	       console.log(err);
@@ -190,7 +193,7 @@ app.get('/icoVerify',function(req,res){
 			return;
 		}
 		//2.5  查看是否已经完成过ico
-		db.ifIcod(TcashAddr,function(err,ret){
+		db.ifIcod(revTcashAddr,function(err,ret){
 			if(err) {
 				res.send({err:-400,msg:'DB ERROR!'});
 				return;
@@ -203,7 +206,7 @@ app.get('/icoVerify',function(req,res){
 			//3.查询改bitcoin地址的余额,余额没有达到要求则返回错误
 			getBitcoinAddressRecieved(gotBitcoinAddr,function(err,ret){
 				if(err) {
-					res.send({err:-200,msg:'Invaild Bitcoin address!'});
+					res.send({err:-200,msg:err.message});
 					return;
 				}
 				if(ret<=ICO_LIMIT) {

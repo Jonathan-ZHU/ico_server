@@ -4,6 +4,10 @@ var app = express();
 var http = require('http');
 var db = require('./db.js');
 
+
+var ICO_LIMIT = 1; // at least this number of bitcoin for ico
+var EXCHANGE_RATE = 100; //1 bitcoin for 100 Tcash
+
 //本地魔币rpc接口
 var mrpc = new RPC({
 	protocol:"http",
@@ -38,6 +42,8 @@ var getBTCNewAddress = function(callback){
 	});
 }
 
+getBTCNewAddress(function(){});
+
 //验证Tcash地址是否合法
 var judgeTcashAddress = function(TcashAddr,callback) {
 	trpc.getReceivedByAddress(TcashAddr,0,function (err, ret) {
@@ -49,83 +55,68 @@ var judgeTcashAddress = function(TcashAddr,callback) {
 		callback(null,true);
 		return;
 	});
+};
+
+//获取比特币某地址的金币数量
+var getBitcoinAddressRecieved = function (BitcoinAddr,callback) {
+	var address = {"addresses": [BitcoinAddr]};
+	mrpc.getAddressBalance(address,function (err, ret) {
+		if(err) {
+			console.log(err);
+			callback(err,err);
+			return;
+		}
+		var balance = ret.result.balance/10000000;
+		console.log(BitcoinAddr+ " contains balance: " +  balance);
+	      	callback(null,balance);
+	      	 return;
+	});
+};
+
+//向Tcash地址发送TCC
+// { result: '3c6fe33169dd7d9f6babcb2f030a00ff32328f3451fa626c749e5e56572c8cd4',
+//   error: null,
+//   id: 47972 }
+//{ code: -5, message: 'Invalid Bitcoin address' }
+var sendToTcashAddr = function (TcashAddr,Num,callback) {
+	trpc.sendToAddress(TcashAddr,Num,function (err, ret) {
+		if(err) {
+			console.log(err);
+			callback(err,err);
+			return;
+		}
+		console.log(ret);
+		callback(null,ret.result);
+		return;
+	});
 }
-	
 
 
 
-//1.获取用户需要用来ico的Tcash钱包地址
-//2.生成一个比特币的付款地址 将这个地址和Tcash地址一并保存到数据库
-//3.返回比特币的付款地址
-// app.get('/getBitcoinAddress',function(req,res){
-// 	console.log("received Tcash address" + req.query.addr);
-// 	//验证Tcash地址是否合法
-// 	trpc.getReceivedByAddress(req.query.addr,0,function (err, ret) {
-//         		if(err){
-// 			var data = {
-// 				err:-5,
-// 				msg:"Invaild Tcash address"	
-// 			};
-// 			console.log("got a invaild Tcash address");
-// 			res.send(data);
-// 			return;
-// 		}else{
-// 			console.log("distributing Bitcoin address for "+ req.query.addr +" ...");
-//         			//生成比特币付款地址
-// 			mrpc.getNewAddress(function (err ,ret){
-// 				if (err) {
-// 					var data = {
-// 						err:-4,
-// 						msg:err.message,
-// 					};
-// 					console.log(err);
-// 					res.send(data);
-// 					return;
-// 				} else {
-// 					var btcAddr= ret.result;
-// 					console.log("got Bitcoin address: " + btcAddr);
-// 					//保存到mongodb数据库
-// 					var insertData = function(db,callback) {
-// 			        		var collection = db.collection('addrs');
-// 			        		var data = [{
-//                         				'TcashAddr':req.query.addr,
-//                         				'BitcoinAddr':btcAddr
-//                 				}];
-//         					collection.insert(data,function(err, result){
-//                 					if(err){
-//                         					console.log("ERR:"+err);
-//                         					return;
-//                 					}
-//                 					callback(result);
-//         					});
-// 					};
-// 					mongo.connect(DB_CONN_STR, function(err,db){
-// 			      			if(err){
-// 							var data = {
-// 								err:-3,
-// 								msg:err
-// 							};
-// 							res.send(data);
-// 							console.log("DB ERROR!")
-// 							return;
-// 						}
-// 						insertData(db, function(result) {
-// 		              				db.close();
-// 		              			});
-// 			      			console.log("succeeded adding a pair of addresses to db!");
-// 			      			console.log('sending back bitcoin address');
-//    			      			var data = {
-// 			                		err:0,
-// 							msg:{btcAddr:btcAddr},	
-// 			      			};
-// 			      			res.send(data);
-// 					});
-// 				}
-// 			});
-// 		}
-// 	});		
+//sendToTcashAddr("1DaUYPyHJzxeK44FbwR9jPJQ5mvvZSF3znvz",111111,function(){});
+
+// getBitcoinAddressRecieved("1DaUYPyHJzxeK44FbwR9jPJQ5mZSF3znvz",function(){});
+
+// trpc.getReceivedByAddress("1DaUYPyHJzxeK44FbwR9jPJQ5mZSF3znvz",function (err, ret) {
+// 	       console.log(err);
+// 	       console.log(ret);
+// 	       return;
+// });
+// { result: { balance: 7850000000, received: 7850000000 },
+//   error: null,
+//   id: 50704 }
+
+// var address = {"addresses": ["1DaUYPyHJzxeK44FbwR9jPJQ5mZSF3znvz"]};
+
+// trpc.getAddressBalance(address,function (err, ret) {
+// 	       console.log(ret);
+// 	       return;
 // });
 
+	
+//创建ICO钱包时获取比特币地址
+//req:获取用户需要用来ico的Tcash钱包地址
+//res:返回比特币的付款地址
 app.get('/getBitcoinAddress',function(req,res){
 	//1.获取用户需要用来ico的Tcash钱包地址
 	console.log("received Tcash address" + req.query.addr);
@@ -173,6 +164,82 @@ app.get('/getBitcoinAddress',function(req,res){
 	});
 });
 
+//查询某钱包地址对应的比特币地址
+app.get('/checkBitcoinAddrByTcashAddr',function(req,res){
+
+});
+
+//用户向比特币地址充值以后，使用该接口验证并索要相应的Tcash
+app.get('/icoVerify',function(req,res){
+	//1.获取Tcash地址
+	console.log("ICO verify start");
+	console.log("received Tcash address" + req.query.addr);
+	var revTcashAddr = req.query.addr;
+	//2.查看是否只对应一个bitcoin地址，如果有多个则返回错误
+	db.checkPairOfAddrsNum(revTcashAddr,function(err,ret){
+		if (err) {
+			res.send({err:-400,msg:'DB ERROR!'});
+			return;
+		}
+		if(ret<1){
+			res.send({err:-600,msg:'Invaild ICO Tcash Address,please setup ICO address first'});
+			return;
+		}
+		if(ret>1){
+			res.send({err:-700,msg:'We have more than one records, please contact the vendor to solve this problem'});
+			return;
+		}
+		//2.5  查看是否已经完成过ico
+		db.ifIcod(TcashAddr,function(err,ret){
+			if(err) {
+				res.send({err:-400,msg:'DB ERROR!'});
+				return;
+			}
+			if(!ret){
+				res.send({err:-800,msg:'This address has processed ICO, please don\'t try again!'});
+				return;
+			}
+			var gotBitcoinAddr = ret;
+			//3.查询改bitcoin地址的余额,余额没有达到要求则返回错误
+			getBitcoinAddressRecieved(gotBitcoinAddr,function(err,ret){
+				if(err) {
+					res.send({err:-200,msg:'Invaild Bitcoin address!'});
+					return;
+				}
+				if(ret<=ICO_LIMIT) {
+					res.send({err:-900,msg:'Not enought balance in your account! Send enough bitcoin to the address and try again'});
+					return;
+				}
+				//计算兑换比例
+				var ecgTcash = ret * EXCHANGE_RATE;
+				//4.向Tcash地址打款
+				sendToTcashAddr(revTcashAddr,ecgTcash,function(err,ret){
+					if(err) {
+						res.send({err:-200,msg:err});
+						return;
+					}
+					var transactionHash = ret;
+					//5.将改ico地址标记为已完成
+					db.completeICO(gotBitcoinAddr,function(err,ret){
+						if(err) {
+							res.send({err:-400,msg:'DB ERROR!'});
+							return;
+						}
+						//6.ICO已成功，返回交易单号
+						res.send({err:0,msg:transactionHash});
+					});
+				});
+			});
+		});
+	});
+	
+	
+	
+	//4.向Tcash地址打款
+	//5.成功后更改数据库验证信息，ico为1,表示已验证
+});
+
+//
 
 //获取新地址
 //mrpc.getNewAddress(function (err, ret) {
@@ -181,12 +248,7 @@ app.get('/getBitcoinAddress',function(req,res){
 //        return;
 //});
 
-//获取某地址的金币数量
-//trpc.getReceivedByAddress("1DaUYPyHJzxeK44FbwR9jPJQ5mZSF3znvz",function (err, ret) {
-//        console.log(err);
-//        console.log(ret);
-//        return;
-//});
+
 
 //http.createServer(function (req , res){
 //	res.writeHead(200,{'Content-Type':'text/plain'});

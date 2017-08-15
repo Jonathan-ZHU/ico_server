@@ -47,9 +47,8 @@ exports.ifTcashAddrExist = function(TcashAddr,callback) {
         		var data = {
             			'TcashAddr':TcashAddr,
     		};
-		collection.find(data).toArray(function(err, result){
+		collection.find(data).toArray(function( , result){
         			if(err){
-                				console.log("ERR:"+err);
                 				callback(result);
                 				return;
         			}
@@ -59,7 +58,6 @@ exports.ifTcashAddrExist = function(TcashAddr,callback) {
 	mongo.connect(DB_CONN_STR, function(err,db){
 	  	if(err){
 			callback(err,err);
-			console.log("DB ERROR!")
 			return;
 		}
 		findData(db, function(result) {
@@ -84,7 +82,6 @@ exports.checkPairOfAddrsNum = function(TcashAddr,callback){
     		};
 		collection.find(data).toArray(function(err, result){
         			if(err){
-                				console.log("ERR:"+err);
                 				callback(result);
                 				return;
         			}
@@ -94,7 +91,6 @@ exports.checkPairOfAddrsNum = function(TcashAddr,callback){
 	mongo.connect(DB_CONN_STR, function(err,db){
 	  	if(err){
 			callback(err,err);
-			console.log("DB ERROR!")
 			return;
 		}
 		findData(db, function(result) {
@@ -114,7 +110,6 @@ exports.ifIcod = function(TcashAddr,callback){
     		};
 		collection.find(data).toArray(function(err, result){
         			if(err){
-                				console.log("ERR:"+err);
                 				callback(result);
                 				return;
         			}
@@ -124,7 +119,6 @@ exports.ifIcod = function(TcashAddr,callback){
 	mongo.connect(DB_CONN_STR, function(err,db){
 	  	if(err){
 			callback(err,err);
-			console.log("DB ERROR!")
 			return;
 		}
 		findData(db, function(result) {
@@ -152,7 +146,6 @@ exports.completeICO = function(BitcoinAddr,callback){
     		};
     		collection.update(data, {$set: {icod:1}},function(err, result){
         			if(err){
-                				console.log("ERR:"+err);
                 				callback(result);
                 				return;
         			}
@@ -162,12 +155,10 @@ exports.completeICO = function(BitcoinAddr,callback){
 	mongo.connect(DB_CONN_STR, function(err,db){
 	  	if(err){
 			callback(err,err);
-			console.log("DB ERROR!")
 			return;
 		}
 		update(db, function(result) {
 	      		db.close();
-	      		console.log(BitcoinAddr + "completed ICO");
 	      		callback(null,"ok!");
 	      	});	  	
 	  	return;

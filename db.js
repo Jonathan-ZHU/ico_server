@@ -47,7 +47,7 @@ exports.ifTcashAddrExist = function(TcashAddr,callback) {
         		var data = {
             			'TcashAddr':TcashAddr,
     		};
-		collection.find(data).toArray(function( , result){
+		collection.find(data).toArray(function(err, result){
         			if(err){
                 				callback(result);
                 				return;

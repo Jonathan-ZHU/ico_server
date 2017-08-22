@@ -27,8 +27,8 @@ var mrpc = new RPC({
 	protocol:"http",
 	host:'127.0.0.1',
 	port:'10085',
-	user:'mbc',
-	pass:'mbc',
+	user:'123',
+	pass:'123',
 });
 
 //本地Tcash的rpc接口
@@ -93,6 +93,18 @@ var getBitcoinAddressRecieved = function (BitcoinAddr,callback) {
 	      	 return;
 	});
 };
+//获取Tcash某地址的金币数量
+var getTcashAddressRecieved = function (TcashAddr,callback) {
+	trpc.getReceivedByAddress(TcashAddr,function (err, ret) {
+		if(err) {
+			callback(err.code,err.message);
+			return;
+		}
+		var balance = ret.result;
+	  callback(null,balance);
+	  return;
+	});
+};
 
 
 //向Tcash地址发送TCC
@@ -111,7 +123,7 @@ var sendToTcashAddr = function (TcashAddr,Num,callback) {
 	});
 }
 
-	
+
 //创建ICO钱包时获取比特币地址
 //req:获取用户需要用来ico的Tcash钱包地址
 //res:返回比特币的付款地址
@@ -168,7 +180,7 @@ app.get('/getBitcoinAddress',function(req,res){
 				});
 			});
 		});
-		
+
 	});
 });
 
@@ -256,7 +268,56 @@ app.get('/icoVerify',function(req,res){
 	});
 });
 
-//
+//接受Tcash和bitcoin地址，验证其合法性和正确性并返回各自的余额
+app.get('/checkIco',function (req,res){
+  var revTcashAddr = req.query.tcashAddr;
+  var revBitcoinAddr = req.query.bitcoinAddr;
+  if(!revTcashAddr || !revBitcoinAddr) {
+    res.send({err:-10,msg:'received no address!'});
+    return;
+  }
+  //1.数据库查找Tcash对应的Bitcoin地址
+  db.checkAddress(revTcashAddr,function(err,ret) {
+    if(err){
+      (err==-1) ? res.send({err:-20,msg:'more than one records found!'}):{};
+      (err==-2) ? res.send({err:-30,msg:'no record found!'}) :{};
+      (err!=1 && err!=2) ? res.send({err:-40,msg:'DB ERR!'}) :{};
+      return;
+    }
+    var gotBitcoinAddr = ret;
+    //Tcash 和 bitcoin 地址不对应 则报错
+    if(gotBitcoinAddr != revBitcoinAddr) {
+      res.send({err:-50,msg:'bitcoin address does match tcash address'});
+      return;
+    }
+    //如果对应则查询Tcash和Bitcoin 余额
+    getBitcoinAddressRecieved(revBitcoinAddr,function(err,ret){
+      if(err){
+        res.send({err:err,msg:ret});
+        return;
+      }
+      var bitcoinBalance = ret;
+      getTcashAddressRecieved(revTcashAddr,function(err,ret){
+        if(err){
+          res.send({err:err,msg:ret});
+          return;
+        }
+        var tcashBalance = ret;
+        res.send({
+          err:0,
+          msg:{
+            tcashBalance:tcashBalance,
+            bitcoinBalance:bitcoinBalance
+          }
+        });
+        return;
+      });
+    });
+
+  });
+});
+
+
 
 //获取新地址
 //mrpc.getNewAddress(function (err, ret) {
@@ -275,7 +336,7 @@ app.get('/icoVerify',function(req,res){
 
 //trpc.getReceivedByAddress("1DaUYPyHJzxeK44FbwR9jPJQ5mZSF3znvz",0,function (err, ret) {
 //	console.log(err);
-//	console.log(ret);	
+//	console.log(ret);
 //
 //});
 

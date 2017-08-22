@@ -68,7 +68,7 @@ exports.ifTcashAddrExist = function(TcashAddr,callback) {
 	      		}
 	      		callback(null,false);
 	      	});
-	  	
+
 	  	return;
 	});
 }
@@ -96,7 +96,7 @@ exports.checkPairOfAddrsNum = function(TcashAddr,callback){
 		findData(db, function(result) {
 	      		db.close();
 	      		callback(null,result.length);
-	      	});	  	
+	      	});
 	  	return;
 	});
 }
@@ -131,7 +131,7 @@ exports.ifIcod = function(TcashAddr,callback){
 	      		} else {
 	      			callback(null,null);
 	      		}
-	      	});	  	
+	      	});
 	  	return;
 	});
 }
@@ -160,7 +160,43 @@ exports.completeICO = function(BitcoinAddr,callback){
 		update(db, function(result) {
 	      		db.close();
 	      		callback(null,"ok!");
-	      	});	  	
+	      	});
+	  	return;
+	});
+}
+
+//通过Tcash地址查询bitcoin地址
+exports.checkAddress = function(TcashAddr,callback){
+	var findData = function(db,callback) {
+        		var collection = db.collection('addrs');
+        		var data = {
+            			'TcashAddr':TcashAddr,
+    		};
+		collection.find(data).toArray(function(err, result){
+        			if(err){
+                				callback(result);
+                				return;
+        			}
+    			callback(result);
+		});
+	};
+	mongo.connect(DB_CONN_STR, function(err,db){
+	  	if(err){
+				callback(err,err);
+				return;
+			}
+			findData(db, function(result) {
+	      db.close();
+	      if(result.length > 1){
+					callback(-1,"more than one records!");
+					return;
+				}
+				if(result.length < 1){
+					callback(-2,"no record found!");
+					return;
+				}
+				callback(null,result[0].BitcoinAddr);
+	    });
 	  	return;
 	});
 }

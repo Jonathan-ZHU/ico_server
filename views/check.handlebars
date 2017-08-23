@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Tcash ICO Check</title>
+    <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- 可选的 Bootstrap 主题文件（一般不用引入） -->
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+    <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+  </head>
+  <body>
+
+
+   <!-- <form>
+     <div class="form-group">
+       <label for="exampleInputEmail1">Tcash地址</label>
+       <input type="text" class="form-control" id="" placeholder="填写用户提供的Tcash地址">
+     </div>
+     <div class="form-group">
+       <label for="exampleInputPassword1">比特币地址</label>
+       <input type="text" class="form-control" id="" placeholder="填写用户提供的比特币地址">
+     </div>
+     <button type="submit" class="btn btn-default">开始验证</button>
+   </form> -->
+   <div class="">
+     当前ICO比特币钱包总余额：{{{btcBalance}}} BTC
+   </div>
+
+   <form class="form-inline">
+    <div class="form-group">
+      <label for="tcashAddr">Tcash地址</label>
+      <input type="text" style="width:400px" class="form-control" id="tcashAddr" placeholder="填写ICO用户提供的Tcash地址">
+    </div>
+    <div class="form-group">
+      <label for="bitcoinAddr">Bitcoin地址</label>
+      <input type="text" style="width:400px" class="form-control" id="bitcoinAddr" placeholder="填写ICO用户提供的Bitcoin地址">
+    </div>
+    <button type="button" id='btnVerify' class="btn btn-default btn-info">开始验证</button>
+  </form>
+   <div class="console" id="console">
+
+   </div>
+
+
+   <script src="qrcode.min.js"></script>
+   <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+   <script type="text/javascript">
+    $("#btnVerify").click(function(event){
+      $("#console").html("正在验证...<br>");
+      var tcashAddr = $("#tcashAddr").val();
+      var bitcoinAddr = $("#bitcoinAddr").val();
+      var url = "http://tcash.ico.tiny-calf.com/checkIco?tcashAddr=" + tcashAddr + "&bitcoinAddr=" + bitcoinAddr;
+      $.ajax(url,{
+        success:function(data){
+            console.log(data);
+            if(data.err==-20) { $("#console").append("有超过一条记录，请将该情况转告技术部门");return; }
+            if(data.err==-30) { $("#console").append("未找到该记录，客户可能没有在APP中申请成功");return; }
+            if(data.err==-40) { $("#console").append("数据库错误，请将该情况转告技术部门");return; }
+            if(data.err==-50) { $("#console").append("Tcash地址和Bitcoin地址不匹配，请检查输入");return; }
+            $("#console").append("匹配成功！<br>");
+            $("#console").append("检测到该比特币地址中包含 " + data.msg.bitcoinBalance + " BTC<br>");
+            $("#console").append("如果您是本项目出纳且正在进行ICO的回款，可通过Tcash移动端扫描以下地址汇款<br>");
+            var tcashnum = data.msg.bitcoinBalance * 3000;
+            $("#console").append("根据 1：3000 的比例，应该向该地址汇入 "+ tcashnum +" TCC:<br>");
+            $("#console").append('<canvas id="canvas"></canvas>');
+            $("#console").append('<span style="color:red">注意：本功能仅作辅助查询之用，无法判断是否存在重复打款或者漏打的情况，请对已完成ICO的地址做好详细记录</span>');
+            qrcodelib.toCanvas(document.getElementById('canvas'), tcashAddr, function (error) {
+              if (error) console.error(error)
+              console.log('success!');
+
+            });
+        },
+        error:function(err){
+            $("#console").append(err);
+        }
+      });
+    });
+
+   </script>
+
+
+  </body>
+</html>

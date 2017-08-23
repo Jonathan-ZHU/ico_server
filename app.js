@@ -5,7 +5,10 @@ var http = require('http');
 var db = require('./db.js');
 var fs = require('fs');
 var path = require('path');
-
+var hbs = require('express3-handlebars').create();
+app.engine('handlebars',hbs.engine);
+app.set('view engine','handlebars');
+app.use(express.static(__dirname + "/Public/"))
 /*Params*/
 var ICO_LIMIT = 1; // at least this number of bitcoin for ico
 var EXCHANGE_RATE = 100; //1 bitcoin for 100 Tcash
@@ -23,7 +26,7 @@ app.all('*', function(req, res, next) {
 
 
 //本地魔币rpc接口
-var mrpc = new RPC({
+var mrpc = new RPC({  
 	protocol:"http",
 	host:'127.0.0.1',
 	port:'10085',
@@ -31,7 +34,7 @@ var mrpc = new RPC({
 	pass:'123',
 });
 
-//本地Tcash的rpc接口
+//本地Tcash的rpc接口文件
 var trpc = new RPC({
 	protocol:"http",
 	host:'127.0.0.1',
@@ -74,12 +77,23 @@ var judgeTcashAddress = function(TcashAddr,callback) {
 	trpc.getReceivedByAddress(TcashAddr,0,function (err, ret) {
         		if(err){
 			callback(null,false);
-			return;
+			return;sendfile
 		}
 		callback(null,true);
 		return;
 	});
 };
+
+//获取服务器比特比钱包余额
+var getBitcoinWalletBalance = function(callback){
+  mrpc.getBalance(function(err,ret){
+    if(err){
+      callback(err.code,err.message);
+			return;
+    }
+    callback(null,ret.result);
+  });
+}
 
 //获取比特币某地址的金币数量
 var getBitcoinAddressRecieved = function (BitcoinAddr,callback) {
@@ -315,6 +329,20 @@ app.get('/checkIco',function (req,res){
     });
 
   });
+});
+
+//查询页面
+app.get('/check',function(req,res){
+  //查询服务器Bitcoin地址总余额
+  getBitcoinWalletBalance(function(err,ret){
+    if(err) {
+      res.send(ret);
+      return;
+    }
+    res.type("html");
+    res.render("check",{btcBalance:ret});
+  });
+
 });
 
 

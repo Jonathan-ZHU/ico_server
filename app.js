@@ -26,7 +26,7 @@ app.all('*', function(req, res, next) {
 
 
 //本地魔币rpc接口
-var mrpc = new RPC({  
+var mrpc = new RPC({
 	protocol:"http",
 	host:'127.0.0.1',
 	port:'10085',

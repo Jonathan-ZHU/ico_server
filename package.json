@@ -7,8 +7,7 @@
     "bitcoind-rpc": "^0.6.0",
     "express": "4.15.3",
     "express3-handlebars": "^0.5.2",
-    "mongodb": "2.2.30",
-    "qrcode": "^0.9.0"
+    "mongodb": "2.2.30"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

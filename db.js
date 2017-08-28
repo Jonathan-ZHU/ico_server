@@ -136,7 +136,6 @@ exports.ifIcod = function(TcashAddr,callback){
 	});
 }
 
-
 //将改ico地址标记为已完成
 exports.completeICO = function(BitcoinAddr,callback){
 	var update = function(db,callback) {
@@ -197,6 +196,103 @@ exports.checkAddress = function(TcashAddr,callback){
 				}
 				callback(null,result[0].BitcoinAddr);
 	    });
+	  	return;
+	});
+}
+
+//向BitcoinAddr表插入一个地址
+exports.importBitcoinAddress = function (BitcoinAddr, callback){
+	var insertData = function(db,callback) {
+			var collection = db.collection('BitcoinAddrs');
+			var data = [{
+						'addr':BitcoinAddr
+					}];
+			collection.insert(data,function(err, result){
+					if(err){
+										console.log("ERR:"+err);
+										callback(result);
+										return;
+					}
+					callback(result);
+		  });
+	};
+	mongo.connect(DB_CONN_STR, function(err,db){
+	  	if(err){
+			var data = {
+				err:-3,
+				msg:err
+			};
+			callback(err,err);
+			console.log("DB ERROR!")
+			return;
+		}
+		insertData(db, function(result) {
+	      		db.close();
+	      	});
+	  	callback(null,"ok");
+	  	return;
+	});
+}
+
+//向BitcoinAddr表插入多个地址
+exports.importBitcoinAddresses = function (BitcoinAddrs, callback){
+	var insertData = function(db,callback) {
+			var collection = db.collection('BitcoinAddrs');
+			var data = BitcoinAddrs;
+			collection.insert(data,function(err, result){
+					if(err){
+										console.log("ERR:"+err);
+										callback(result);
+										return;
+					}
+					callback(result);
+		  });
+	};
+	mongo.connect(DB_CONN_STR, function(err,db){
+	  	if(err){
+			var data = {
+				err:-3,
+				msg:err
+			};
+			callback(err,err);
+			console.log("DB ERROR!")
+			return;
+		}
+		insertData(db, function(result) {
+	      		db.close();
+	      	});
+	  	callback(null,"ok");
+	  	return;
+	});
+}
+
+//清空BitcoinAddr数据表
+exports.clearBitcoinAddresses = function (callback){
+	var clear = function(db,callback) {
+			var collection = db.collection('BitcoinAddrs');
+			collection.remove({},function(err, result){
+					if(err){
+										console.log("ERR:"+err);
+										callback(result);
+										return;
+					}
+					callback(result);
+		  });
+	};
+	mongo.connect(DB_CONN_STR, function(err,db){
+	  	if(err){
+			var data = {
+				err:-3,
+				msg:err
+			};
+			callback(err,err);
+			console.log("DB ERROR!")
+			return;
+		}
+		clear(db, function(result) {
+	      		db.close();
+	      	});
+	  	callback(null,"ok");
 	  	return;
 	});
 }
